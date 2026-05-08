@@ -6,8 +6,15 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build (${{ matrix.goos }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            ext: ""
+          - goos: windows
+            ext: .exe
 
     steps:
       - name: Checkout
@@ -19,7 +26,15 @@ jobs:
           go-version: 1.26
 
       - name: Build binary
-        run: go build -o goclone ./cmd/goclone
+        run: |
+          mkdir -p dist
+          GOOS=${{ matrix.goos }} GOARCH=amd64 go build -o dist/goclone-${{ matrix.goos }}-amd64${{ matrix.ext }} ./cmd/goclone
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: goclone-${{ matrix.goos }}-amd64
+          path: dist/goclone-${{ matrix.goos }}-amd64${{ matrix.ext }}
 
   release:
     name: Release
